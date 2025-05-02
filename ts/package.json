@@ -2,7 +2,7 @@
   "name": "bowling",
   "version": "1.0.0",
   "main": "index.js",
-  "module": "esm",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
@@ -10,5 +10,8 @@
   },
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@types/node": "^22.15.3"
+  }
 }
