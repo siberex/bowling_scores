@@ -16,15 +16,30 @@ export const enum GameType {
 };
 
 const enum FrameType {
-    Open = "OPEN",
-    Strike = "STRIKE",
-    Spare = "SPARE",
-    Split = "SPLIT",
-    Gutter = "GUTTER",
+    Open = "OPEN", // player does not knock down all ten pins during their two turns (one or more pins are standing at the deck)
+    Strike = "STRIKE", // player knocks down all ten pins with the first turn, marked "X"
+    Spare = "SPARE", // player knocks down all ten pins with their two turns, marked "/"
+    // Split = "SPLIT", // headpin knocked down, but there are two or more non-adjacent (i.e. at least 1 pin apart) groups of pins left, highlighted red
+    Gutter = "GUTTER", // no pins are hit (ball rolls into one of the gutters), marked "-"
+
+    // Those are Game achievments, not frame types per se
+    // Turkey = "TURKEY", // three strikes in a row, "🦃"
+    // Double — two strikes in a row
+    // Hambone or four-bagger — four strikes in a row
+    // Brat — five X in a row
+    // Wild Turkey or six-pack = 6X
+    // Front seven = 7X
+    // Octopus = 8X "🐙"
+    // Golden Turkey = 9X
+    // Front Ten = 10X
+    // Front eleven = 11X
+    // Dinosaur = 12X (A Perfect Game), "🦕"
 };
 
 class Frame {
     type: FrameType = FrameType.Open;
+    // Valid examples: [10], [0, 0], [2, 8], [10, 10, 5]
+    // Invalid examples: ...
     rolls: Array<number> = [];
 }
 
@@ -67,6 +82,8 @@ class ScoringSheet {
 export class BowlingGame {
     type: GameType = GameType.Tenpin;
     scoring_maxroll: number;
+    scoring_maxframes: number;
+
     players: Map<string, Player> = new Map();
 
     constructor(type: GameType) {
@@ -74,6 +91,7 @@ export class BowlingGame {
             throw new GameSetupError(`Scoring for "${type}" type is not implemented`, {code: ERRORCODE.scoring_not_implemented});
         }
         this.scoring_maxroll = 10;
+        this.scoring_maxframes = 10;
 
     }
 
