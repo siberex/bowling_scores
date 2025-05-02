@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 
-import { BowlingGame,  GameType } from "./bowling.js";
+import { BowlingGame } from "./bowling.js";
+import { GameType } from './scoring.js';
 import { ERRORCODE, GameSetupError, GameError, GameRangeError } from "./errors.js";
 
 console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
@@ -68,6 +69,8 @@ game.roll(Player1, 2);
 game.roll(Player1, 8);
 game.roll(Player1, 10);
 
+game.getPlayer(Player1)?.getScoringSheet();
+
 // todo: test one more roll (should fail)
 
 // final score should be 122
@@ -87,5 +90,7 @@ game.roll(Player3, 10);
 game.roll(Player3, 10);
 game.roll(Player3, 10);
 game.roll(Player3, 10);
+
+game.getPlayer(Player3)?.getScoringSheet();
 
 // todo: test one more roll (should fail)

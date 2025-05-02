@@ -5,11 +5,14 @@ export const enum ERRORCODE {
     roll_is_negative,
     roll_exceeds_max_pins,
     player_not_found,
-
+    action_not_implemented,
+    no_more_rolls_available,
+    no_more_frames_available,
 };
 
 type ErrorDetails = {
-    code: ERRORCODE
+    code: ERRORCODE,
+    pins?: number,
 };
 
 export class GameError extends Error {
