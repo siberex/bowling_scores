@@ -1,7 +1,27 @@
 
+export const enum ERRORCODE {
+    unknown,
+    scoring_not_implemented,
+    roll_is_negative,
+    roll_exceeds_max_pins,
+    player_not_found,
+
+};
+
+type ErrorDetails = {
+    code: ERRORCODE
+};
+
 export class GameError extends Error {
-    constructor(message: string, options?: object) {
+    details: ErrorDetails | undefined;
+    code = ERRORCODE.unknown;
+
+    constructor(message: string, details?: ErrorDetails) {
         super(message);
+        this.details = details;
+        if (details !== undefined) {
+            this.code = details.code;
+        }
 
         // Maintains proper stack trace for where our error was thrown (non-standard)
         if (Error.captureStackTrace) {
@@ -10,9 +30,18 @@ export class GameError extends Error {
     }
 }
 
+export class GameSetupError extends GameError {}
+
 export class GameRangeError extends RangeError {
-    constructor(message: string, options?: object) {
+    details: ErrorDetails | undefined;
+    code = ERRORCODE.unknown;
+
+    constructor(message: string, details?: ErrorDetails) {
         super(message);
+        this.details = details;
+        if (details !== undefined) {
+            this.code = details.code;
+        }
 
         // Maintains proper stack trace for where our error was thrown (non-standard)
         if (Error.captureStackTrace) {
@@ -20,10 +49,3 @@ export class GameRangeError extends RangeError {
         }
     }
 }
-
-export const enum ERRORCODE {
-    roll_is_negative,
-    roll_exceeds_max_pins,
-    player_not_found
-
-};
