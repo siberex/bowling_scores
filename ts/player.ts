@@ -35,6 +35,7 @@ export class Player implements PlayerInterface {
     roll(pins: number = 0) {
         this.scoring.roll(pins);
     }
+
     getScoringSheet() {
         // TODO check if game is not finished yet?
 
@@ -42,6 +43,7 @@ export class Player implements PlayerInterface {
         const scratch = this.scoring.frames.map(frame => frame.getScore()).reduce((acc, v) => acc + v, 0);
         const total = scratch + this.handicap;
 
+        //
         console.log(sheetStr);
         console.log(total);
     }

@@ -20,7 +20,6 @@ const enum FrameType {
     Spare = "SPARE", // player knocks down all ten pins with their two turns, marked "/"
     // related to roll, not frame
     Gutter = "GUTTER", // no pins are hit (ball rolls into one of the gutters), marked "-"
-    Final = "FINAL", // last frame (could consist of up to 3 rolls)
     
     // Meta type, roll can be marked as a Foul. It is always done manually. And sometimes retrospectively.
     // Foul: player’s body touches or crosses beyond the foul line and touches any part of the lane.
@@ -58,15 +57,18 @@ class Frame {
 
     bonusPoints = 0;
 
-    constructor(maxRoll: number) {
+    readonly isLast: boolean;
+
+    constructor(maxRoll: number, isLast = false) {
         this.maxRoll = maxRoll;
+        this.isLast = isLast;
     }
 
     getScore(): number {
         return this.rolls.reduce((acc, v) => acc + v, 0) + this.bonusPoints;
     }
 
-    roll(score = 0) {
+    verifyScore(score: number) {
         if (score < 0) {
             throw new GameRangeError(`Negative knocked pins (${score})`, {code: ERRORCODE.roll_is_negative, pins: score});
         }
@@ -78,6 +80,34 @@ class Frame {
             );
         }
 
+        if (this.rolls.length > 0) {
+            const prevRoll =  this.rolls.at(-1) ?? 0;
+            if ((score + prevRoll) > this.maxRoll) {
+                throw new GameRangeError(
+                    `Frame score (${score} + ${prevRoll}) exceeds the maximum allowed number (${this.maxRoll})`,
+                    {code: ERRORCODE.roll_exceeds_max_pins, pins: (score + prevRoll)}
+                );
+            }
+        }
+    }
+
+    isRollAllowed(): boolean {
+        return true;
+    }
+
+    roll(score = 0) {
+        this.verifyScore(score);
+        // ...        
+    }
+}
+
+class FrameTenpin extends Frame {
+    isRollAllowed(): boolean {
+        return true;
+    }
+    
+    roll(score = 0) {
+        this.verifyScore(score);
 
         if (this.rolls.length === 0) {
             // Strike
@@ -88,13 +118,6 @@ class Frame {
                 this.displayRolls.push(score > 0 ? score.toString() : "-");
             }
         } else if (this.rolls.length === 1) {
-            if ((score + this.rolls[0]) > this.maxRoll) {
-                throw new GameRangeError(
-                    `Frame score (${score} + ${this.rolls[0]}) exceeds the maximum allowed number (${this.maxRoll})`,
-                    {code: ERRORCODE.roll_exceeds_max_pins, pins: (score + this.rolls[0])}
-                );
-            }
-
             // Spare
             if ((score + this.rolls[0]) === this.maxRoll) {
                 this.type = FrameType.Spare;
@@ -108,47 +131,12 @@ class Frame {
                 this.type = FrameType.Gutter;
                 this.displayRolls.push("-");
             }
-        } else { // this.rolls.length > 1
-            // Not allowed more than two rolls in a frame which is not last
-            throw new GameError(`No more rolls available`, {code: ERRORCODE.no_more_rolls_available});    
-        }
-        
-        this.rolls.push(score);
-    }
-}
 
-class LastFrame extends Frame {
-    readonly type = FrameType.Final;
-    
-    roll(score = 0) {
-        
-        if (this.rolls.length < 2) {
-            super.roll(score);
-            // this.type = FrameType.Final;
-
-            // Look behind for strikes
-            if (this.rolls.length === 1 && this.rolls[0] === this.maxRoll) {
+            // Last frame: look behind for strikes
+            if (this.isLast && this.rolls[0] === this.maxRoll) {
                 this.bonusPoints += score;
             }
-        } else if (this.rolls.length === 2) {
-            if (score < 0) {
-                throw new GameRangeError(`Negative knocked pins (${score})`, {code: ERRORCODE.roll_is_negative, pins: score});
-            }
-    
-            if (score > this.maxRoll) {
-                throw new GameRangeError(
-                    `Knocked pin count (${score}) exceeds the maximum allowed number (${this.maxRoll})`,
-                    {code: ERRORCODE.roll_exceeds_max_pins, pins: score}
-                );
-            }
-
-            if ((score + this.rolls[1]) > this.maxRoll) {
-                throw new GameRangeError(
-                    `Last frame score (${score} + ${this.rolls[1]}) exceeds the maximum allowed number (${this.maxRoll})`,
-                    {code: ERRORCODE.roll_exceeds_max_pins, pins: (score + this.rolls[1])}
-                );
-            }
-
+        } else if (this.isLast && this.rolls.length === 2) {
             this.rolls.push(score);
 
             // Look behind for strikes or spares
@@ -157,16 +145,19 @@ class LastFrame extends Frame {
             }
 
             let displayScore = score > 0 ? score.toString() : "-";
-            if ((score + this.rolls[1]) === this.maxRoll) {
+            if (score === this.maxRoll) {
+                displayScore = "X";
+            } else if ( (score + this.rolls[1]) === this.maxRoll ) {
                 displayScore = "/";
             }
             this.displayRolls.push(displayScore);
-            
-        } else { // this.rolls.length > 2
-            // Not possible to roll more than three times
-            throw new GameError(`No more rolls available`, {code: ERRORCODE.no_more_rolls_available});
+        } else { // this.rolls.length > 1 or > 2 on the lastFrame
+            // Not allowed more than two rolls in a frame which is not last
+            // Not allowed more than three rolls on a last frame
+            throw new GameError(`No more rolls available`, {code: ERRORCODE.no_more_rolls_available});    
         }
 
+        this.rolls.push(score);
     }
 }
 
@@ -204,7 +195,7 @@ export class ScoringTenpin extends Scoring {
     maxFrames = 10;
     frames: Array<Frame> = [];
     currentFrameIndex = 0;
-    currentFrame = new Frame(this.maxRoll);
+    currentFrame = new FrameTenpin(this.maxRoll);
 
     roll(pins: number = 0) {
         this.currentFrame.roll(pins);
@@ -227,22 +218,25 @@ export class ScoringTenpin extends Scoring {
             }
         }
 
-        // Advance to the next frame
-        if (this.currentFrame.type === FrameType.Strike || this.currentFrame.rolls.length > 1) {
+        // Advance to the next frame when the current frame is not last and either condition is met:
+        // - current roll was a strike
+        // - current roll was the second of two rolls in the current frame
+        if ( !this.currentFrame.isLast && (
+                this.currentFrame.type === FrameType.Strike
+                || this.currentFrame.rolls.length === 2
+            ) ) {
 
             this.frames.push(this.currentFrame);
-            
+
             this.currentFrameIndex++;
+
             if (this.currentFrameIndex <= this.maxFrames) {
-                this.currentFrame = new Frame(this.maxRoll);
-            } else if (this.currentFrameIndex + 1 === this.maxFrames) {
-                // going to be the last frame
-                this.currentFrame = new LastFrame(this.maxRoll);
-            } else { // this.currentFrameIndex + 1 > this.maxFrames
+                const isLastFrame = this.currentFrameIndex === this.maxFrames;
+                this.currentFrame = new FrameTenpin(this.maxRoll, isLastFrame);
+            } else { // this.currentFrameIndex > this.maxFrames
                 // Impossible to play more than maxFrames
                 throw new GameError(`No more frames to play`, {code: ERRORCODE.no_more_frames_available});
             }            
         }
     }
-
 }
