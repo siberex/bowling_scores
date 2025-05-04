@@ -14,7 +14,7 @@ export const enum GameType {
     Fivepin = "FIVEPIN",
 };
 
-const enum FrameType {
+export const enum FrameType {
     Open = "OPEN", // frame is currently in play
     Strike = "STRIKE", // player knocked down all the pins with the first roll, marked "X"
     Spare = "SPARE", // player knocked down all the pins during two turns, marked "/"
@@ -298,7 +298,7 @@ export class ScoringTenpin extends Scoring {
 
         // Last roll of the last frame: close the scoring sheet and push the last frame.
         // It will be the third roll if there were Strike or Spare in the last frame.
-        // Or second roll therwise (i.e. last frame consists of two regular rolls).
+        // Or the second roll otherwise (i.e. when the last frame consists of two regular rolls).
         if ( this.currentFrame.isLast ) {
             if (
                 ((this.currentFrame.type === FrameType.Strike || this.currentFrame.type === FrameType.Spare) && this.currentFrame.rolls.length === 3)

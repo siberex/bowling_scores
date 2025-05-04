@@ -1,12 +1,39 @@
-import {GameRangeError, ERRORCODE, GameError} from "./errors.js";
-import {ScoringTenpin, ScoringInterface} from './scoring.js';
+import {ScoringTenpin, ScoringInterface, FrameType} from './scoring.js';
 
+export class FrameDisplay {
+    protected readonly _rolls: Array<string>;
+    get rolls() { return this._rolls; }
+    protected readonly _index: number;
+    get index() { return this._index; }
+    protected readonly _score: number;
+    get score() { return this._score; }
+    readonly isStrike: boolean = false;
+    readonly isSpare: boolean = false;
+    constructor(index: number, score: number, rolls: Array<string>, type: FrameType) {
+        this._index = index;
+        this._rolls = rolls;
+        this._score = score;
+        this.isSpare = (type === FrameType.Spare);
+        this.isStrike = (type === FrameType.Strike);
+    }
+}
 
-class ScoringSheet {
-    scratch: number = 0;
+export class ScoringSheet {
+    scratch = 0;
     handicap = 0;
-    total = 0;
+    readonly _total = 0;
+    get total() {
+        return this.scratch + this.handicap;
+    }
     closed = false;
+    frames: Array<FrameDisplay> = [];
+    toString() {
+        return (
+            this.frames.map(f => f.rolls.join(" ")).join("\t") + "\n"
+            + this.frames.map(f => f.score.toString()).join("\t")
+            + (this.closed && this.handicap > 0 ? `\t + ${this.handicap} = ${this.total}` : "")
+        );
+    }
 }
 
 export interface PlayerInterface {
@@ -15,22 +42,19 @@ export interface PlayerInterface {
     roll(pins: number, isSplit?: boolean): void;
     getScoringSheet(): ScoringSheet;
     printScoringSheet(): void;
-
-    // mtp
     scoring: ScoringInterface;
 }
 
 export class Player implements PlayerInterface {
-    _name: string;
+    readonly _name: string;
     get name() {
         return this._name;
     }
-    _handicap: number;
+    readonly _handicap: number;
     get handicap() {
         return this._handicap;
     }
 
-    // FIXME: Rely on the interface instead of the concrete class
     public scoring = new ScoringTenpin();
 
     constructor(name: string, handicap = 0) {
@@ -43,19 +67,27 @@ export class Player implements PlayerInterface {
     }
 
     getScoringSheet(): ScoringSheet {
-        return new ScoringSheet(); // FIXME
+        const sheet = new ScoringSheet();
+
+        sheet.closed = this.scoring.closed;
+        sheet.handicap = this.handicap;
+
+        let accumulated = 0;
+        this.scoring.frames.forEach((frame, index) => {
+            accumulated += frame.getScore();
+            sheet.frames.push(new FrameDisplay(index, accumulated, frame.displayRolls, frame.type));
+        });
+
+        sheet.scratch = accumulated;
+        return sheet;
     }
 
     printScoringSheet() {
-        // TODO check if game is not finished yet?
-
-        const sheetStr = this.scoring.frames.map(frame => frame.displayRolls.join(",") + ":" + frame.getScore() + '(' + frame.bonusPoints + ')' + (frame.isLast ? '*': ''));
-        const scratch = this.scoring.frames.map(frame => frame.getScore()).reduce((acc, v) => acc + v, 0);
-        const total = scratch + this.handicap;
-
-        // FIXME
-        console.log(sheetStr);
-        console.log(total);
+        const sheet = this.getScoringSheet();
+        console.log(
+            this.name + (sheet.closed ? "" : " [IN PROGRESS]") + "\n"
+            + sheet.toString()
+        );
     }
 
     

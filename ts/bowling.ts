@@ -1,6 +1,6 @@
 import {GameError, GameRangeError, GameSetupError, ERRORCODE} from "./errors.js";
 import {GameType} from './scoring.js';
-import {PlayerInterface, Player} from './player.js';
+import {PlayerInterface, Player, ScoringSheet} from './player.js';
 
 
 export class BowlingGame {
@@ -26,6 +26,10 @@ export class BowlingGame {
 
     getPlayer(name: string): PlayerInterface | undefined {
         return this.players.get(name);
+    }
+
+    getScoring(name: string): ScoringSheet | undefined {
+        return this.players.get(name)?.getScoringSheet();
     }
 
     protected addPlayer(player: PlayerInterface) {
