@@ -69,7 +69,11 @@ game.roll(Player1, 2);
 game.roll(Player1, 8);
 game.roll(Player1, 10);
 
-game.getPlayer(Player1)?.getScoringSheet();
+// TODO: test exposed properties?
+// console.log(game.getPlayer(Player1)?.scoring.currentFrame);
+// console.log(game.getPlayer(Player1)?.scoring.frames.length);
+
+game.getPlayer(Player1)?.printScoringSheet();
 
 // todo: test one more roll (should fail)
 
@@ -92,5 +96,6 @@ game.roll(Player3, 10);
 game.roll(Player3, 10);
 
 game.getPlayer(Player3)?.getScoringSheet();
+game.getPlayer(Player3)?.printScoringSheet();
 
 // todo: test one more roll (should fail)

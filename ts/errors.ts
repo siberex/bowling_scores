@@ -4,6 +4,7 @@ export const enum ERRORCODE {
     scoring_not_implemented,
     roll_is_negative,
     roll_exceeds_max_pins,
+    frame_exceeds_max_pins,
     player_not_found,
     action_not_implemented,
     no_more_rolls_available,

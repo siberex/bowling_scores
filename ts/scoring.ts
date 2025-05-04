@@ -15,35 +15,10 @@ export const enum GameType {
 };
 
 const enum FrameType {
-    Open = "OPEN", // player does not knock down all ten pins during their two turns (one or more pins are standing at the deck)
-    Strike = "STRIKE", // player knocks down all ten pins with the first turn, marked "X"
-    Spare = "SPARE", // player knocks down all ten pins with their two turns, marked "/"
-    // related to roll, not frame
-    Gutter = "GUTTER", // no pins are hit (ball rolls into one of the gutters), marked "-"
-    
-    // Meta type, roll can be marked as a Foul. It is always done manually. And sometimes retrospectively.
-    // Foul: player’s body touches or crosses beyond the foul line and touches any part of the lane.
-    // Foul: player does not release the ball within 30s timeout.
-    // Marked "F"
-    // Foul = "FOUL",
-
-    // Meta type, marked retrospectively after the roll.
-    // Split: headpin knocked down, but there are two or more non-adjacent (i.e. at least 1 pin apart) groups of pins left
-    // Highlighted in red or with a circle around a pin number.
-    // Split = "SPLIT", 
-
-    // Those are Game achievments, not frame types per se
-    // Turkey = "TURKEY", // three strikes in a row, "🦃"
-    // Double — two strikes in a row
-    // Hambone or Llama or four-bagger — four strikes in a row
-    // Brat — five X in a row
-    // Wild Turkey or six-pack = 6X
-    // Front seven = 7X
-    // Octopus = 8X "🐙"
-    // Golden Turkey = 9X
-    // Front Ten = 10X
-    // Front eleven = 11X
-    // Dinosaur = 12X (A Perfect Game), "🦕"
+    Open = "OPEN", // frame is currently in play
+    Strike = "STRIKE", // player knocked down all the pins with the first roll, marked "X"
+    Spare = "SPARE", // player knocked down all the pins during two turns, marked "/"
+    Gutter = "GUTTER", // no pins were knocked down during two turns (balls rolled into the gutters), marked "-"
 };
 
 class Frame {
@@ -79,16 +54,6 @@ class Frame {
                 {code: ERRORCODE.roll_exceeds_max_pins, pins: score}
             );
         }
-
-        if (this.rolls.length > 0) {
-            const prevRoll =  this.rolls.at(-1) ?? 0;
-            if ((score + prevRoll) > this.maxRoll) {
-                throw new GameRangeError(
-                    `Frame score (${score} + ${prevRoll}) exceeds the maximum allowed number (${this.maxRoll})`,
-                    {code: ERRORCODE.roll_exceeds_max_pins, pins: (score + prevRoll)}
-                );
-            }
-        }
     }
 
     isRollAllowed(): boolean {
@@ -97,73 +62,118 @@ class Frame {
 
     roll(score = 0) {
         this.verifyScore(score);
-        // ...        
+        if (this.isRollAllowed()) this.rolls.push(score);
+        // ...
     }
 }
 
 class FrameTenpin extends Frame {
-    isRollAllowed(): boolean {
-        return true;
+
+    verifyScore(score: number) {
+        super.verifyScore(score);
+
+        // Additional checks specific to the tenpin scoring
+        if (this.rolls.length > 0) {
+            const prevRoll =  this.rolls.at(-1) ?? 0;
+
+            // Second roll knocked more pins than possible
+            if (!this.isLast && (score + prevRoll) > this.maxRoll) {
+                throw new GameRangeError(
+                    `Frame score (${prevRoll} + ${score}) exceeds the maximum allowed number (${this.maxRoll})`,
+                    {code: ERRORCODE.frame_exceeds_max_pins, pins: (prevRoll + score)}
+                );
+            }
+
+            // Last frame
+            if (this.isLast) {
+                // Second or third roll knocked more pins than possible (without a prior Strike or Spare)
+                if (this.type !== FrameType.Spare && this.type !== FrameType.Strike && (score + prevRoll) > this.maxRoll) {
+                    throw new GameRangeError(
+                        `Last frame score (${prevRoll} + ${score}) exceeds the maximum allowed number (${this.maxRoll})`,
+                        {code: ERRORCODE.frame_exceeds_max_pins, pins: (prevRoll + score)}
+                    );
+                }
+            }
+        }
     }
-    
+
+    // Check it roll is allowed in this frame
+    isRollAllowed(): boolean {
+        // ✓ First roll in a frame
+        if (this.rolls.length === 0) return true;
+
+        // Second roll
+        // Not allowed after strike (except for the last frame)
+        if (this.rolls.length === 1 && (this.rolls[0] !== this.maxRoll || this.isLast)) return true;
+
+        // Third roll only allowed in the last frame and only after spare or strike
+        if ( this.rolls.length === 2 && this.isLast && (
+            this.rolls[0] === this.maxRoll // strike
+            || (this.rolls[0] + this.rolls[1]) === this.maxRoll // spare
+        ) ) return true;
+
+        return false;
+    }
+
     roll(score = 0) {
-        this.verifyScore(score);
-
-        if (this.rolls.length === 0) {
-            // Strike
-            if (score === this.maxRoll) {
-                this.type = FrameType.Strike;
-                this.displayRolls = ['X'];
-            } else {
-                this.displayRolls.push(score > 0 ? score.toString() : "-");
-            }
-        } else if (this.rolls.length === 1) {
-            // Spare
-            if ((score + this.rolls[0]) === this.maxRoll) {
-                this.type = FrameType.Spare;
-                this.displayRolls.push("/");
-            } else {
-                this.displayRolls.push(score > 0 ? score.toString() : "-");
-            }
-
-            // Gutter
-            if (this.rolls[0] === 0 && score === 0) {
-                this.type = FrameType.Gutter;
-                this.displayRolls.push("-");
-            }
-
-            // Last frame: look behind for strikes
-            if (this.isLast && this.rolls[0] === this.maxRoll) {
-                this.bonusPoints += score;
-            }
-        } else if (this.isLast && this.rolls.length === 2) {
-            this.rolls.push(score);
-
-            // Look behind for strikes or spares
-            if ( this.rolls[0] === this.maxRoll || (this.rolls[0] + this.rolls[1] === this.maxRoll) ) {
-                this.bonusPoints += score;
-            }
-
-            let displayScore = score > 0 ? score.toString() : "-";
-            if (score === this.maxRoll) {
-                displayScore = "X";
-            } else if ( (score + this.rolls[1]) === this.maxRoll ) {
-                displayScore = "/";
-            }
-            this.displayRolls.push(displayScore);
-        } else { // this.rolls.length > 1 or > 2 on the lastFrame
-            // Not allowed more than two rolls in a frame which is not last
-            // Not allowed more than three rolls on a last frame
+        if (!this.isRollAllowed()) {
             throw new GameError(`No more rolls available`, {code: ERRORCODE.no_more_rolls_available});    
         }
 
+        this.verifyScore(score);
+
+        let displayScore = score > 0 ? score.toString() : "-";
+
+        // Strike
+        if (score === this.maxRoll) {
+            if (this.rolls.length === 0) this.type = FrameType.Strike;
+            displayScore = "X";
+        }
+
+        if (this.rolls.length > 0) {
+            const prevRoll = this.rolls.at(-1) ?? 0;
+
+            // Spare
+            if (score + prevRoll === this.maxRoll) {
+                if (this.rolls.length === 1) this.type = FrameType.Spare;
+                displayScore = "/";
+            }
+
+            // Gutter
+            if (this.rolls.length === 1 && prevRoll === 0 && score === 0) {
+                this.type = FrameType.Gutter;
+            }
+        
+            if (this.isLast) {
+                if ( this.rolls.length === 1 ) {}
+    
+            }
+            
+
+            // Last frame: look behind for Strikes, double Strikes and Spares
+            if (this.isLast) {
+                // if (this.rolls.length === 1 && prevRoll === this.maxRoll) this.bonusPoints += score;
+
+                if (this.rolls.length === 2) {
+                    if ( this.rolls[0] === this.maxRoll || (this.rolls[0] + this.rolls[1] === this.maxRoll) ) {
+                        // this.bonusPoints += score;
+                    }
+                }
+            }
+        }
+
         this.rolls.push(score);
+        this.displayRolls.push(displayScore);        
     }
 }
 
 
-interface ScoringInterface {
+export interface ScoringInterface {
     type: GameType;
+    frames: Array<Frame>;
+    currentFrame: Frame;
+    currentFrameIndex: number;
+    closed: boolean;
     roll(pins: number): void;
 }
 
@@ -173,24 +183,47 @@ abstract class Scoring implements ScoringInterface {
     abstract readonly maxRoll: number;
     abstract readonly maxFrames: number;
     abstract frames: Array<Frame>;
-    abstract currentFrameIndex: number;
     abstract currentFrame: Frame;
+    abstract currentFrameIndex: number;
+    abstract closed: boolean;
 
     abstract roll(pins: number): void;
 
+    // Any roll can be marked as a Foul.
+    // Foul registered right away if player does not release the ball within 30s timeout.
+    // Foul registered retroactively (after the roll): player’s body touches or crosses beyond the foul line and touches any part of the lane.
+    // Scoresheet mark: "F"
     registerFoul() {
         throw new GameError(`Not implemented`, {code: ERRORCODE.action_not_implemented});
     }
-    registerDeadball() {
-        throw new GameError(`Not implemented`, {code: ERRORCODE.action_not_implemented});
-    }
+
+
+    // Split is marked retroactively after the roll by observing standing pins.
+    // Split happens when headpin knocked down, but there are two or more non-adjacent (i.e. at least 1-pin apart) pin groups left standing on deck.
+    // Scoresheet mark: Roll score number highlighted in red or printed within a circle.
     registerSplit() {
         throw new GameError(`Not implemented`, {code: ERRORCODE.action_not_implemented});
     }
+
+    // Those are some named Score achievments:
+    // Turkey: three strikes in a row
+    // Hambone or Llama or Four-Bagger: four strikes in a row
+    // Brat: five strikes in a row
+    // Wild Turkey or six-pack = 6X
+    // Front seven = 7X
+    // Octopus = 8X
+    // Golden Turkey = 9X
+    // Front Ten = 10X
+    // Front eleven = 11X
+    // Dinosaur = 12X (A Perfect Game)
+
+    // See Also: https://en.wikipedia.org/wiki/Dutch_200 
+    // See Also: http://www.balmoralsoftware.com/bowling/bowling.htm    
 }
 
 export class ScoringTenpin extends Scoring {
     type = GameType.Tenpin;
+    closed: boolean = false;
     maxRoll = 10;
     maxFrames = 10;
     frames: Array<Frame> = [];
@@ -198,27 +231,37 @@ export class ScoringTenpin extends Scoring {
     currentFrame = new FrameTenpin(this.maxRoll);
 
     roll(pins: number = 0) {
+        if (this.closed) {
+            throw new GameError(`Scoresheet is closed, no more rolls`, {code: ERRORCODE.no_more_frames_available});
+        }
+
         this.currentFrame.roll(pins);
 
-        // Look behind to check for spares and strikes
+        // Look behind to check for Spares and Strikes
         if (this.currentFrameIndex - 1 >= 0) {
             const prevFrame = this.frames[this.currentFrameIndex - 1];
             if (prevFrame.type === FrameType.Strike) {
-                prevFrame.bonusPoints += pins;
+                // Only the first two rolls from the last frame should count towards the previous Strike bonus points
+                if (!this.currentFrame.isLast || this.currentFrame.rolls.length < 3) {
+                    prevFrame.bonusPoints += pins;
+                }
 
-                // Check for second Strike
+                // Check for the second Strike
                 if (this.currentFrameIndex - 2 >= 0 && this.frames[this.currentFrameIndex - 2].type === FrameType.Strike) {
-                    this.frames[this.currentFrameIndex - 2].bonusPoints += pins;
-                }   
+                    // Only the first roll from the last frame should count towards the pre-previous Strike bonus points
+                    if (!this.currentFrame.isLast || this.currentFrame.rolls.length === 1) {
+                        this.frames[this.currentFrameIndex - 2].bonusPoints += pins;
+                    }
+                }
             }
 
+            // Increase previous Spare points only for the first roll of the current frame
             if (prevFrame.type === FrameType.Spare && this.currentFrame.rolls.length === 1) {
-                // Increase previous Spare points only for the first roll of the current frame
                 prevFrame.bonusPoints += pins;
             }
         }
 
-        // Advance to the next frame when the current frame is not last and either condition is met:
+        // Advance to the next frame when the current frame is not the last one and either condition is met:
         // - current roll was a strike
         // - current roll was the second of two rolls in the current frame
         if ( !this.currentFrame.isLast && (
@@ -230,13 +273,27 @@ export class ScoringTenpin extends Scoring {
 
             this.currentFrameIndex++;
 
-            if (this.currentFrameIndex <= this.maxFrames) {
-                const isLastFrame = this.currentFrameIndex === this.maxFrames;
+            if (this.currentFrameIndex < this.maxFrames) {
+                const isLastFrame = (this.currentFrameIndex === this.maxFrames - 1);
                 this.currentFrame = new FrameTenpin(this.maxRoll, isLastFrame);
-            } else { // this.currentFrameIndex > this.maxFrames
+            } else { // this.currentFrameIndex >= this.maxFrames
                 // Impossible to play more than maxFrames
                 throw new GameError(`No more frames to play`, {code: ERRORCODE.no_more_frames_available});
             }            
+        }
+
+        // Last roll of the last frame: close the scoring sheet and push the last frame.
+        // It will be the third roll if there were Strike or Spare in the last frame.
+        // Or second roll therwise (i.e. last frame consists of two regular rolls).
+        if ( this.currentFrame.isLast ) {
+            if (
+                ((this.currentFrame.type === FrameType.Strike || this.currentFrame.type === FrameType.Spare) && this.currentFrame.rolls.length === 3)
+                || 
+                ((this.currentFrame.type === FrameType.Open || this.currentFrame.type === FrameType.Gutter) && this.currentFrame.rolls.length === 2)
+            ) {
+                this.frames.push(this.currentFrame);
+                this.closed = true;
+            }
         }
     }
 }
