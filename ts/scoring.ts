@@ -262,8 +262,8 @@ export class ScoringTenpin extends Scoring {
 
                 // Check for the second Strike
                 if (this.currentFrameIndex - 2 >= 0 && this.frames[this.currentFrameIndex - 2].type === FrameType.Strike) {
-                    // Only the first roll from the last frame should count towards the pre-previous Strike bonus points
-                    if (!this.currentFrame.isLast || this.currentFrame.rolls.length === 1) {
+                    // Only the first roll from any current frame is counted towards the pre-previous Strike bonus points
+                    if (this.currentFrame.rolls.length === 1) {
                         this.frames[this.currentFrameIndex - 2].bonusPoints += pins;
                     }
                 }

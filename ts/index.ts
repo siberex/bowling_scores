@@ -116,7 +116,7 @@ const TEST_SHEETS: Array<TestSheet | null> = [
     ["AIDEN",   [6, 0, 3, 6, 10, 10, 8, 0, 10, 9, 0, 10, 8, 0, 1, 7],               131],
     null,
     ["TOM",     [7, 2, 6, 0, 5, 5, 8, 1, 4, 5, 7, 2, 6, 0, 4, 0, 9, 1, 3, 7, 6],    99],
-    // ["MIKE",    [10, 5, 1, 3, 3, 3, 4, 7, 2, 10, 10, 3, 3, 5, 1, 6, 3],             104], // got: 107
+    ["MIKE",    [10, 5, 1, 3, 3, 3, 4, 7, 2, 10, 10, 3, 3, 5, 1, 6, 3],             104],
     ["SMEL",    [1, 4, 4, 0, 7, 2, 5, 0, 7, 2, 8, 1, 3, 6, 10, 3, 6, 5, 0],         83],
     ["GRACE",   [10, 6, 4, 4, 1, 3, 5, 1, 8, 10, 1, 7, 7, 0, 3, 4, 4, 5],           105],
     ["AIDEN",   [4, 0, 8, 0, 7, 0, 5, 0, 10, 8, 0, 7, 2, 5, 0, 9, 0, 6, 2],         81],
@@ -136,11 +136,11 @@ TEST_SHEETS.forEach((testSheet: TestSheet | null) => {
 // ...
 // testRolls(Player1, [...]);
 
-console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
-game.addPlayerName("MIKE");
-[10, 5, 1, 3, 3, 3, 4, 7, 2, 10, 10, 3, 3, 5, 1, 6, 3].forEach(r => game.roll("MIKE", r));
-console.log(game.getScoring("MIKE"));
-
+// console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
+// game.addPlayerName("MIKE");
+// [10, 5, 1, 3, 3, 3, 4, 7, 2, 10, 10, 3, 3, 5, 1, 6, 3].forEach(r => game.roll("MIKE", r));
+// console.log(game.getScoring("MIKE"));
+// game.getPlayer("MIKE")?.printScoringSheet();
 
 console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
 
