@@ -37,15 +37,26 @@ export class BowlingGame {
     }
 
     roll(name: string, pins: number = 0) {
-
         const player = this.getPlayer(name);
         if (player === undefined) {
-            throw new GameError(`Player name "${name}" is not registrered for the game`, {code: ERRORCODE.player_not_found});
+            throw new GameError(`Player name "${name}" is not registrered in the game`, {code: ERRORCODE.player_not_found});
         }
 
-        // TODO: Check if it is your turn?
-
         player.roll(pins);
+    }
+
+    rollTurn(name: string, pins: number = 0) {
+        // TODO: Check if it is your turn
+        throw new GameError(`Not implemented`, {code: ERRORCODE.action_not_implemented});
+    }
+
+    // mostly for testing purposes
+    rollSeries(name: string, rolls: number[]) {
+        const player = this.getPlayer(name);
+        if (player === undefined) {
+            throw new GameError(`Player name "${name}" is not registrered in the game`, {code: ERRORCODE.player_not_found});
+        }
+        rolls.forEach(pins => player.roll(pins));
     }
 
 }

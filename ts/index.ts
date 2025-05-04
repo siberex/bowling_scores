@@ -7,7 +7,7 @@ import { ERRORCODE, GameSetupError, GameError, GameRangeError } from "./errors.j
 const testRolls = (name = "test player", rolls: Array<number> = [], expectedTotal = 0, handicap = 0) => {
     const game = new BowlingGame(GameType.Tenpin);
     game.addPlayerName(name, handicap);
-    rolls.forEach(r => game.roll(name, r));
+    game.rollSeries(name, rolls);
     const scoring = game.getScoring(name);
     assert(scoring?.total === expectedTotal, `${name} got: ${scoring?.total}, expected: ${expectedTotal}`);
     game.getPlayer(name)?.printScoringSheet();
@@ -59,6 +59,9 @@ game.addPlayerName(Player2, Player2Handicap);
 game.addPlayerName(Player3);
 console.log("✅ addPlayerName");
 
+// Test roll_is_negative
+testRollsError(ERRORCODE.roll_is_negative, Player1, [5, 0, 3, 7, -4, 5], 0, 0);
+
 // Test roll_exceeds_max_pins
 testRollsError(ERRORCODE.roll_exceeds_max_pins, Player2, [11], 0, Player2Handicap);
 
@@ -67,6 +70,9 @@ testRollsError(ERRORCODE.frame_exceeds_max_pins, Player3, [5, 0, 3, 7, 6, 5], 0,
 
 // Test no_more_frames_available
 testRollsError(ERRORCODE.no_more_frames_available, Player1, [10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 1], 0, 0);
+
+// TODO: Test no_more_rolls_available
+
 
 // Test score sheets
 type TestSheet = [string, number[], number];
@@ -120,7 +126,10 @@ const TEST_SHEETS: Array<TestSheet | null> = [
     ["SMEL",    [1, 4, 4, 0, 7, 2, 5, 0, 7, 2, 8, 1, 3, 6, 10, 3, 6, 5, 0],         83],
     ["GRACE",   [10, 6, 4, 4, 1, 3, 5, 1, 8, 10, 1, 7, 7, 0, 3, 4, 4, 5],           105],
     ["AIDEN",   [4, 0, 8, 0, 7, 0, 5, 0, 10, 8, 0, 7, 2, 5, 0, 9, 0, 6, 2],         81],
-
+    null,
+    ["DH",      [10, 8, 2, 9, 1, 8, 0, 10, 10, 9, 1, 9, 1, 10, 10, 9, 1],   202],
+    ["DT",      [7, 3, 10, 10, 8, 1, 9, 1, 8, 1, 10, 9, 1, 8, 2, 6, 1],     164],
+    ["DC",      [10, 10, 10, 10, 10, 10, 10, 10, 6, 4, 10, 10, 10],         276], // Octopus
 ];
 
 TEST_SHEETS.forEach((testSheet: TestSheet | null) => {
@@ -130,11 +139,7 @@ TEST_SHEETS.forEach((testSheet: TestSheet | null) => {
         testRolls(name, rolls, result, 0);
     }
 });
-
-// ...
-// TODO
-// ...
-// testRolls(Player1, [...]);
+console.log("✅ Game scoring and score sheets display");
 
 // console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
 // game.addPlayerName("MIKE");

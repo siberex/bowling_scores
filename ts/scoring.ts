@@ -113,14 +113,14 @@ class FrameTenpin extends Frame {
 
     // Check it roll is allowed in this frame
     isRollAllowed(): boolean {
-        // ✓ First roll in a frame
+        // First roll in a frame, always allowed
         if (this.rolls.length === 0) return true;
 
         // Second roll
-        // Not allowed after strike (except for the last frame)
+        // Not allowed after the strike (except for the last frame)
         if (this.rolls.length === 1 && (this.rolls[0] !== this.maxRoll || this.isLast)) return true;
 
-        // Third roll only allowed in the last frame and only after spare or strike
+        // Third roll is only allowed in the last frame and only after the spare or strike
         if ( this.rolls.length === 2 && this.isLast && (
             this.rolls[0] === this.maxRoll // strike
             || (this.rolls[0] + this.rolls[1]) === this.maxRoll // spare
@@ -156,23 +156,6 @@ class FrameTenpin extends Frame {
             // Gutter
             if (this.rolls.length === 1 && prevRoll === 0 && score === 0) {
                 this.type = FrameType.Gutter;
-            }
-        
-            if (this.isLast) {
-                if ( this.rolls.length === 1 ) {}
-    
-            }
-            
-
-            // Last frame: look behind for Strikes, double Strikes and Spares
-            if (this.isLast) {
-                // if (this.rolls.length === 1 && prevRoll === this.maxRoll) this.bonusPoints += score;
-
-                if (this.rolls.length === 2) {
-                    if ( this.rolls[0] === this.maxRoll || (this.rolls[0] + this.rolls[1] === this.maxRoll) ) {
-                        // this.bonusPoints += score;
-                    }
-                }
             }
         }
 
