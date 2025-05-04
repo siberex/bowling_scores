@@ -86,10 +86,24 @@ class FrameTenpin extends Frame {
 
             // Last frame
             if (this.isLast) {
-                // Second or third roll knocked more pins than possible (without a prior Strike or Spare)
-                if (this.type !== FrameType.Spare && this.type !== FrameType.Strike && (score + prevRoll) > this.maxRoll) {
+                // Scenarios to mitigate:
+                // Third roll knocked more pins than possible after a first-roll strike, except when there were consequent second-roll strike
+                if ( this.type === FrameType.Strike
+                     && this.rolls.length === 2
+                     && this.rolls[1] !== this.maxRoll
+                     && (score + prevRoll) > this.maxRoll ) {
                     throw new GameRangeError(
                         `Last frame score (${prevRoll} + ${score}) exceeds the maximum allowed number (${this.maxRoll})`,
+                        {code: ERRORCODE.frame_exceeds_max_pins, pins: (prevRoll + score)}
+                    );
+                }
+
+                // Second roll knocked more pins than possible (without a prior strike)
+                if ( this.type !== FrameType.Strike
+                     && this.rolls.length === 1
+                     && (score + prevRoll) > this.maxRoll ) {
+                    throw new GameRangeError(
+                        `Last frame second roll score (${prevRoll} + ${score}) exceeds the maximum allowed number (${this.maxRoll})`,
                         {code: ERRORCODE.frame_exceeds_max_pins, pins: (prevRoll + score)}
                     );
                 }
