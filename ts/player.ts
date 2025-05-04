@@ -85,7 +85,7 @@ export class Player implements PlayerInterface {
     printScoringSheet() {
         const sheet = this.getScoringSheet();
         console.log(
-            this.name + (sheet.closed ? "" : " [IN PROGRESS]") + "\n"
+            this.name + (sheet.closed ? "" : " [IN PROGRESS]") + ":\n"
             + sheet.toString()
         );
     }
