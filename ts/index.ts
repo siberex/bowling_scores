@@ -103,19 +103,20 @@ testRollsError(ERRORCODE.frame_exceeds_max_pins, Player3, [5, 0, 3, 7, 6, 5], 0,
 // Test no_more_frames_available
 testRollsError(ERRORCODE.no_more_frames_available, Player1, [10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 1], 0, 0);
 
-// Test no_more_rolls_available
+// Test exposed properties and no_more_rolls_available
 try {
     game.rollSeries(Player5, [0, 2, 10, 10, 1]);
-    const plr = game.getPlayer(Player5);
-    plr?.scoring.currentFrame.roll(6);
-    plr?.scoring.currentFrame.roll(0);
+    const testPlayer = game.getPlayer(Player5);
+    testPlayer?.scoring.currentFrame.roll(6);
+    assert(testPlayer?.scoring.frames.length === 3, `Expected 3 frames, got ${testPlayer?.scoring.frames.length}`);
+    assert(testPlayer?.scoring.currentFrameIndex === 3, `Expecting current frame to be #4, got ${testPlayer?.scoring.currentFrameIndex + 1}`);
+    testPlayer?.scoring.currentFrame.roll(0); // Should fail here
     throw new Error(`Test fixture error: Not getting no_more_rolls_available GameError`);
 } catch (e) {
     if (e instanceof GameError) assert(e.code === ERRORCODE.no_more_rolls_available, `Expected error no_more_rolls_available. Got: ${ERRORCODE[e.code]}`);
     else throw e;
     console.log("✅ Asserted Error: no_more_rolls_available");
 }
-
 
 // Test score sheets
 console.log(SEPARATOR);
@@ -190,64 +191,36 @@ console.log("✅ Game scoring and score sheets display");
 
 // console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
 // game.addPlayer("MIKE");
-// [10, 5, 1, 3, 3, 3, 4, 7, 2, 10, 10, 3, 3, 5, 1, 6, 3].forEach(r => game.roll("MIKE", r));
+// game.rollSeries("MIKE", [10, 5, 1, 3, 3, 3, 4, 7, 2, 10, 10, 3, 3, 5, 1, 6, 3]);
 // console.log(game.getScoring("MIKE"));
 // game.getPlayer("MIKE")?.printScoringSheet();
 
 console.log(SEPARATOR);
 
 
+// Test intermediate scoring
+game.rollSeries(Player1, [8, 1, 0, 9, 2, 8, 10, 6, 3, 7, 0]);
+const scoringPartial = game.getPlayer(Player1)?.getScoringSheet();
+assert(scoringPartial?.closed === false, `Expected partial scoring sheet not to be closed`);
+assert(scoringPartial?.total === 73, `${Player1} got: ${scoringPartial?.total}, expected: 73`);
+if (PRINT_SHEETS) game.getPlayer(Player1)?.printScoringSheet();
+
+game.rollSeries(Player1, [5, 2, 10, 0, 6, 2, 8, 10]);
+const scoringFinal = game.getPlayer(Player1)?.getScoringSheet();
+assert(scoringFinal?.closed === true, `Expected final scoring sheet to be closed`);
+assert(scoringFinal?.total === 122, `${Player1} got: ${scoringFinal?.total}, expected: 122`);
+if (PRINT_SHEETS) game.getPlayer(Player1)?.printScoringSheet();
+console.log("✅ Partial and final scoring and display");
 
 
-game.roll(Player1, 8);
-game.roll(Player1, 1);
-game.roll(Player1, 0);
-game.roll(Player1, 9);
-game.roll(Player1, 2);
-game.roll(Player1, 8);
+// Test "Perfect game"
+game.rollSeries(Player3, Array(12).fill(10));
+const perfectScoring = game.getPlayer(Player3)?.getScoringSheet();
+assert(perfectScoring?.closed === true, `Expected final scoring sheet to be closed`);
+assert(perfectScoring?.total === 300, `${Player3} got: ${perfectScoring?.total}, expected: 300`);
+if (PRINT_SHEETS) game.getPlayer(Player3)?.printScoringSheet();
+console.log("✅ Perfect Game scoring and display");
 
-game.roll(Player1, 10);
-game.roll(Player1, 6);
-game.roll(Player1, 3);
-game.roll(Player1, 7);
-game.roll(Player1, 0);
-// TODO: test intermediate score
-game.getPlayer(Player1)?.printScoringSheet(); // assert 73
-game.roll(Player1, 5);
-game.roll(Player1, 2);
-game.roll(Player1, 10);
-game.roll(Player1, 0);
-game.roll(Player1, 6);
 
-game.roll(Player1, 2);
-game.roll(Player1, 8);
-game.roll(Player1, 10);
-
-// TODO: test exposed properties?
-// console.log(game.getPlayer(Player1)?.scoring.currentFrame);
-// console.log(game.getPlayer(Player1)?.scoring.frames.length);
-
-game.getPlayer(Player1)?.printScoringSheet();
-
-// todo: test one more roll (should fail)
-
-// final score should be 122
-
-game.roll(Player3, 10);
-game.roll(Player3, 10);
-game.roll(Player3, 10);
-
-game.roll(Player3, 10);
-game.roll(Player3, 10);
-game.roll(Player3, 10);
-
-game.roll(Player3, 10);
-game.roll(Player3, 10);
-game.roll(Player3, 10);
-
-game.roll(Player3, 10);
-game.roll(Player3, 10);
-game.roll(Player3, 10);
-
-game.getPlayer(Player3)?.getScoringSheet();
-game.getPlayer(Player3)?.printScoringSheet();
+// TODO: Test partial and final scoring with handicap
+// game.rollSeries(Player2, []);
