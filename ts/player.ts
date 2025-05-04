@@ -24,7 +24,7 @@ export class ScoringSheet {
     handicap = 0;
     readonly _total = 0;
     get total() {
-        return this.scratch + this.handicap;
+        return this.closed ? (this.scratch + this.handicap) : this.scratch;
     }
     closed = false;
     frames: Array<FrameDisplay> = [];
@@ -81,6 +81,17 @@ export class Player implements PlayerInterface {
             accumulated += frame.getScore();
             sheet.frames.push(new FrameDisplay(index, accumulated, frame.displayRolls, frame.type));
         });
+
+        // Add frame currently in play to the intermediate scoring sheet
+        if (!this.scoring.closed && this.scoring.currentFrame.rolls.length !== 0) {
+            accumulated += this.scoring.currentFrame.getScore();
+            sheet.frames.push(new FrameDisplay(
+                this.scoring.currentFrameIndex,
+                accumulated,
+                this.scoring.currentFrame.displayRolls,
+                this.scoring.currentFrame.type
+            ))
+        }
 
         sheet.scratch = accumulated;
         return sheet;

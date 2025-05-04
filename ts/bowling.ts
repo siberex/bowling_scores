@@ -9,7 +9,14 @@ export class BowlingGame {
     scoring_maxframes: number;
 
     players: Map<string, PlayerInterface> = new Map();
+    protected _playersList: string[] = [];
+    get playerList() {
+        return [...this.players.keys()];
+    }
     currentPlayer?: string;
+
+    protected isStarted: boolean = false;
+    protected isFinished: boolean = false;
 
     constructor(type: GameType) {
         if (type !== GameType.Tenpin) {
@@ -43,6 +50,7 @@ export class BowlingGame {
             }
         } else {
             // Create new player
+            // TODO: May be restrict adding new players if the game is started (at least one roll were made by any player)
             player = new Player(name, handicap);
             this.players.set(name, player);
         }

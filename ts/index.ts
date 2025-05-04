@@ -5,9 +5,9 @@ import { GameType } from './scoring.js';
 import { ERRORCODE, GameSetupError, GameError, GameRangeError } from "./errors.js";
 
 const SEPARATOR = "⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️";
-const PRINT_SHEETS = false;
+const PRINT_SHEETS = true;
 
-const testRolls = (name = "test player", rolls: Array<number> = [], expectedTotal = 0, handicap = 0) => {
+const testRolls = (rolls: number[] = [], expectedTotal = 0, name = "test player", handicap = 0) => {
     const game = new BowlingGame(GameType.Tenpin);
     game.addPlayer(name, handicap);
     game.rollSeries(name, rolls);
@@ -16,9 +16,9 @@ const testRolls = (name = "test player", rolls: Array<number> = [], expectedTota
     if (PRINT_SHEETS) game.getPlayer(name)?.printScoringSheet();
 }
 
-const testRollsError = (errorCode: ERRORCODE, name = "test player", rolls: Array<number> = [], expectedTotal = 0, handicap = 0) => {
+const testRollsError = (errorCode: ERRORCODE, rolls: number[] = [], expectedTotal = 0, name = "test player", handicap = 0) => {
     try {
-        testRolls(name, rolls, expectedTotal, handicap);
+        testRolls(rolls, expectedTotal, name, handicap);
     } catch (e) {
         if (e instanceof GameError || e instanceof GameRangeError) assert(e.code === errorCode, `Expected error ${ERRORCODE[errorCode]}. Got: ${ERRORCODE[e.code]}`);
         else throw e;
@@ -92,16 +92,16 @@ game.addPlayer(Player5, 100);
 console.log("✅ addPlayer");
 
 // Test roll_is_negative
-testRollsError(ERRORCODE.roll_is_negative, Player1, [5, 0, 3, 7, -4, 5], 0, 0);
+testRollsError(ERRORCODE.roll_is_negative, [5, 0, 3, 7, -4, 5], 0, Player1, 0);
 
 // Test roll_exceeds_max_pins
-testRollsError(ERRORCODE.roll_exceeds_max_pins, Player2, [11], 0, Player2Handicap);
+testRollsError(ERRORCODE.roll_exceeds_max_pins, [11], 0, Player2, Player2Handicap);
 
 // Test frame_exceeds_max_pins
-testRollsError(ERRORCODE.frame_exceeds_max_pins, Player3, [5, 0, 3, 7, 6, 5], 0, 0);
+testRollsError(ERRORCODE.frame_exceeds_max_pins, [5, 0, 3, 7, 6, 5], 0, Player3, 0);
 
 // Test no_more_frames_available
-testRollsError(ERRORCODE.no_more_frames_available, Player1, [10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 1], 0, 0);
+testRollsError(ERRORCODE.no_more_frames_available, [10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 1], 0, Player1, 0);
 
 // Test exposed properties and no_more_rolls_available
 try {
@@ -181,13 +181,12 @@ const TEST_SHEETS: Array<TestSheet | null> = [
 TEST_SHEETS.forEach((testSheet: TestSheet | null) => {
     if (testSheet !== null) {
         const [name, rolls, result] = testSheet;
-        testRolls(name, rolls, result, 0);
+        testRolls(rolls, result, name, 0);
     } else if (PRINT_SHEETS) {
         console.log(SEPARATOR);
     }
 });
 console.log("✅ Game scoring and score sheets display");
-
 
 // console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
 // game.addPlayer("MIKE");
@@ -222,5 +221,46 @@ if (PRINT_SHEETS) game.getPlayer(Player3)?.printScoringSheet();
 console.log("✅ Perfect Game scoring and display");
 
 
-// TODO: Test partial and final scoring with handicap
-// game.rollSeries(Player2, []);
+// Test partial scoring amid frame and the final scoring with handicap
+game.rollSeries(Player2, [2, 3, 4, 5, 10, 10, 0, 9, 8]);
+const scoringPartialHandicap = game.getPlayer(Player2)?.getScoringSheet();
+assert(scoringPartialHandicap?.total === 70, `${Player2} got: ${scoringPartialHandicap?.total}, expected: 70`);
+if (PRINT_SHEETS) game.getPlayer(Player2)?.printScoringSheet();
+game.rollSeries(Player2, [2, 0, 10, 1, 8, 7, 2, 5, 1]);
+const scoringFinalHandicap = game.getPlayer(Player2)?.getScoringSheet();
+assert(scoringFinalHandicap?.total === (107 + Player2Handicap), `${Player2} got: ${scoringFinalHandicap?.total}, expected: ${107 + Player2Handicap}`);
+if (PRINT_SHEETS) game.getPlayer(Player2)?.printScoringSheet();
+console.log("✅ Partial scoring amid frame and final scoring with the handicap");
+
+
+// Test some more score sheets
+console.log(SEPARATOR);
+
+// Existing game instance
+game.rollSeries(Player4, [1, 8, 10, 7, 0, 2, 8, 8, 1, 9, 0, 10, 10, 10, 6, 4, 3]);
+const testScorePlayer4 = game.getPlayer(Player4)?.getScoringSheet().total;
+assert(testScorePlayer4 === 158, `${Player4} got: ${testScorePlayer4}, expected: 158`)
+
+// Isolated game instances
+const TEST_SHEETS_MORE: Array<TestSheet | null> = [
+    [Player4,       [1, 8, 10, 7, 0, 2, 8, 8, 1, 9, 0, 10, 10, 10, 6, 4, 3],        158],
+    ["Dreamer",     [10, 6, 3, 0, 0, 9, 1, 5, 2, 8, 1, 10, 10, 1, 9, 10, 8, 2],     140],
+    ["Dick Weber",  [0, 2, 10, 10, 10, 1, 6, 4, 2, 7, 3, 6, 3, 4, 6, 10, 10, 6],    154],
+    null,
+    ["John Doe",    [5, 5, 4, 5, 8, 2, 10, 0, 10, 10, 6, 2, 10, 4, 6, 10, 10, 0],   169],
+    ["John Doe",    [5, 5, 4, 0, 8, 1, 10, 0, 10, 10, 10, 10, 4, 6, 10, 10, 5],     186],
+    null,
+    ["Brittany",    [10, 7, 3, 8, 1, 7, 3, 5, 0, 0, 6, 10, 10, 8, 0, 10, 10, 10],   157],
+    ["Martyn",      [9, 1, 10, 10, 10, 7, 3, 10, 9, 1, 10, 10, 7, 2],               212],
+];
+
+TEST_SHEETS_MORE.forEach((testSheet: TestSheet | null) => {
+    if (testSheet !== null) {
+        const [name, rolls, result] = testSheet;
+        testRolls(rolls, result, name, 0);
+    } else if (PRINT_SHEETS) {
+        console.log(SEPARATOR);
+    }
+});
+
+console.log("✅ Additional score sheets tests");
