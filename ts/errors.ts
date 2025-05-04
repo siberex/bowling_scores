@@ -1,5 +1,5 @@
 
-export const enum ERRORCODE {
+export enum ERRORCODE {
     unknown,
     scoring_not_implemented,
     roll_is_negative,
