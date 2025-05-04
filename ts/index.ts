@@ -252,6 +252,7 @@ const TEST_SHEETS_MORE: Array<TestSheet | null> = [
     null,
     ["Brittany",    [10, 7, 3, 8, 1, 7, 3, 5, 0, 0, 6, 10, 10, 8, 0, 10, 10, 10],   157],
     ["Martyn",      [9, 1, 10, 10, 10, 7, 3, 10, 9, 1, 10, 10, 7, 2],               212],
+    ["IBF",         [10, 10, 10, 7, 2, 8, 2, 0, 9, 10, 7, 3, 9, 0, 10, 10, 8],      180]
 ];
 
 TEST_SHEETS_MORE.forEach((testSheet: TestSheet | null) => {
