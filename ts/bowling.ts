@@ -19,11 +19,8 @@ export class BowlingGame {
         this.scoring_maxframes = 10;
     }
 
-    addPlayerName(name: string, handicap?: number) {
-        const player = new Player(name, handicap);
-        this.addPlayer(player);
-    }
-
+    // Should not be called except for debug purposes.
+    // By design all operations should be done using the player name.
     getPlayer(name: string): PlayerInterface | undefined {
         return this.players.get(name);
     }
@@ -32,11 +29,27 @@ export class BowlingGame {
         return this.players.get(name)?.getScoringSheet();
     }
 
-    protected addPlayer(player: PlayerInterface) {
-        this.players.set(player.name, player);
+    addPlayer(name: string, handicap: number = 0): PlayerInterface {
+        if (name.length === 0) {
+            throw new GameSetupError(`Empty player name`, {code: ERRORCODE.player_name_empty});
+        }
+
+        let player = this.players.get(name);
+
+        if (player !== undefined) {
+            // Check handicap value for existing platyer with the same name
+            if (player.handicap !== handicap) {
+                throw new GameSetupError(`Player already exists`, {code: ERRORCODE.player_already_exists});
+            }
+        } else {
+            // Create new player
+            player = new Player(name, handicap);
+            this.players.set(name, player);
+        }
+        return player;
     }
 
-    roll(name: string, pins: number = 0) {
+    roll(name: string, pins: number = 0): void {
         const player = this.getPlayer(name);
         if (player === undefined) {
             throw new GameError(`Player name "${name}" is not registrered in the game`, {code: ERRORCODE.player_not_found});
@@ -45,13 +58,13 @@ export class BowlingGame {
         player.roll(pins);
     }
 
-    rollTurn(name: string, pins: number = 0) {
+    rollTurn(name: string, pins: number = 0): void {
         // TODO: Check if it is your turn
         throw new GameError(`Not implemented`, {code: ERRORCODE.action_not_implemented});
     }
 
-    // mostly for testing purposes
-    rollSeries(name: string, rolls: number[]) {
+    // Mostly for testing purposes
+    rollSeries(name: string, rolls: number[]): void {
         const player = this.getPlayer(name);
         if (player === undefined) {
             throw new GameError(`Player name "${name}" is not registrered in the game`, {code: ERRORCODE.player_not_found});

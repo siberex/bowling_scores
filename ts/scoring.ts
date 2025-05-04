@@ -227,7 +227,7 @@ export class ScoringTenpin extends Scoring {
     currentFrameIndex = 0;
     currentFrame = new FrameTenpin(this.maxRoll);
 
-    roll(pins: number = 0) {
+    roll(pins: number = 0): void {
         if (this.closed) {
             throw new GameError(`Scoresheet is closed, no more rolls`, {code: ERRORCODE.no_more_frames_available});
         }

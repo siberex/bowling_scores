@@ -9,6 +9,9 @@ export enum ERRORCODE {
     action_not_implemented,
     no_more_rolls_available,
     no_more_frames_available,
+    wrong_handicap_value,
+    player_name_empty,
+    player_already_exists,
 };
 
 type ErrorDetails = {

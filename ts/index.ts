@@ -4,13 +4,16 @@ import { BowlingGame } from "./bowling.js";
 import { GameType } from './scoring.js';
 import { ERRORCODE, GameSetupError, GameError, GameRangeError } from "./errors.js";
 
+const SEPARATOR = "⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️";
+const PRINT_SHEETS = false;
+
 const testRolls = (name = "test player", rolls: Array<number> = [], expectedTotal = 0, handicap = 0) => {
     const game = new BowlingGame(GameType.Tenpin);
-    game.addPlayerName(name, handicap);
+    game.addPlayer(name, handicap);
     game.rollSeries(name, rolls);
     const scoring = game.getScoring(name);
     assert(scoring?.total === expectedTotal, `${name} got: ${scoring?.total}, expected: ${expectedTotal}`);
-    game.getPlayer(name)?.printScoringSheet();
+    if (PRINT_SHEETS) game.getPlayer(name)?.printScoringSheet();
 }
 
 const testRollsError = (errorCode: ERRORCODE, name = "test player", rolls: Array<number> = [], expectedTotal = 0, handicap = 0) => {
@@ -19,19 +22,18 @@ const testRollsError = (errorCode: ERRORCODE, name = "test player", rolls: Array
     } catch (e) {
         if (e instanceof GameError || e instanceof GameRangeError) assert(e.code === errorCode, `Expected error ${ERRORCODE[errorCode]}. Got: ${ERRORCODE[e.code]}`);
         else throw e;
+        console.log(`✅ Asserted Error: ${ERRORCODE[errorCode]}`);
     }
-
-    console.log(`✅ Asserted Error: ${ERRORCODE[errorCode]}`);
 }
-
-
-
-console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
 
 const Player1 = "The Dude";
 const Player2 = "Donny";
+const Player2Handicap = 27;
 const Player3 = "Sobchak";
-const Player2Handicap = 10;
+const Player4 = "Quintana";
+const Player5 = "Stranger";
+
+console.log(SEPARATOR);
 
 // Should fail with a scoring_not_implemented Error
 try {
@@ -39,8 +41,8 @@ try {
 } catch (e) {
     if (e instanceof GameSetupError) assert(e.code === ERRORCODE.scoring_not_implemented);
     else throw e;
+    console.log("✅ Asserted Error: scoring_not_implemented");
 }
-console.log("✅ Asserted Error: scoring_not_implemented");
 
 const game = new BowlingGame(GameType.Tenpin);
 console.log("✅ new BowlingGame");
@@ -51,13 +53,43 @@ try {
 } catch (e) {
     if (e instanceof GameError) assert(e.code === ERRORCODE.player_not_found);
     else throw e;
+    console.log("✅ Asserted Error: player_not_found");
 }
-console.log("✅ Asserted Error: player_not_found");
 
-game.addPlayerName(Player1);
-game.addPlayerName(Player2, Player2Handicap);
-game.addPlayerName(Player3);
-console.log("✅ addPlayerName");
+// Test player_name_empty
+try {
+    game.addPlayer("");
+} catch(e) {
+    if (e instanceof GameSetupError) assert(e.code === ERRORCODE.player_name_empty, `Expected error player_name_empty. Got: ${ERRORCODE[e.code]}`);
+    else throw e;
+    console.log("✅ Asserted Error: player_name_empty");
+}
+
+// Test wrong_handicap_value
+try {
+    game.addPlayer(Player5, -100);
+} catch(e) {
+    if (e instanceof GameRangeError) assert(e.code === ERRORCODE.wrong_handicap_value, `Expected error wrong_handicap_value. Got: ${ERRORCODE[e.code]}`);
+    else throw e;
+    console.log("✅ Asserted Error: wrong_handicap_value");
+}
+
+game.addPlayer(Player1);
+game.addPlayer(Player2, Player2Handicap);
+game.addPlayer(Player3);
+game.addPlayer(Player4);
+
+// Test player_already_exists
+try {
+    game.addPlayer(Player4, 100);
+} catch (e) {
+    if (e instanceof GameSetupError) assert(e.code === ERRORCODE.player_already_exists, `Expected error player_already_exists. Got: ${ERRORCODE[e.code]}`);
+    else throw e;
+    console.log("✅ Asserted Error: player_already_exists");
+}
+
+game.addPlayer(Player5, 100);
+console.log("✅ addPlayer");
 
 // Test roll_is_negative
 testRollsError(ERRORCODE.roll_is_negative, Player1, [5, 0, 3, 7, -4, 5], 0, 0);
@@ -71,10 +103,23 @@ testRollsError(ERRORCODE.frame_exceeds_max_pins, Player3, [5, 0, 3, 7, 6, 5], 0,
 // Test no_more_frames_available
 testRollsError(ERRORCODE.no_more_frames_available, Player1, [10, 10, 10, 10, 10, 10, 10, 10, 10, 0, 0, 1], 0, 0);
 
-// TODO: Test no_more_rolls_available
+// Test no_more_rolls_available
+try {
+    game.rollSeries(Player5, [0, 2, 10, 10, 1]);
+    const plr = game.getPlayer(Player5);
+    plr?.scoring.currentFrame.roll(6);
+    plr?.scoring.currentFrame.roll(0);
+    throw new Error(`Test fixture error: Not getting no_more_rolls_available GameError`);
+} catch (e) {
+    if (e instanceof GameError) assert(e.code === ERRORCODE.no_more_rolls_available, `Expected error no_more_rolls_available. Got: ${ERRORCODE[e.code]}`);
+    else throw e;
+    console.log("✅ Asserted Error: no_more_rolls_available");
+}
 
 
 // Test score sheets
+console.log(SEPARATOR);
+
 type TestSheet = [string, number[], number];
 const TEST_SHEETS: Array<TestSheet | null> = [
     ["LOZ",     [8, 1, 9, 1, 8, 1, 9, 0, 9, 0, 7, 0, 1, 8, 0, 3, 0, 7, 7, 0],       87],
@@ -133,21 +178,26 @@ const TEST_SHEETS: Array<TestSheet | null> = [
 ];
 
 TEST_SHEETS.forEach((testSheet: TestSheet | null) => {
-    if (testSheet === null) console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
-    else {
+    if (testSheet !== null) {
         const [name, rolls, result] = testSheet;
         testRolls(name, rolls, result, 0);
+    } else if (PRINT_SHEETS) {
+        console.log(SEPARATOR);
     }
 });
 console.log("✅ Game scoring and score sheets display");
 
+
 // console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
-// game.addPlayerName("MIKE");
+// game.addPlayer("MIKE");
 // [10, 5, 1, 3, 3, 3, 4, 7, 2, 10, 10, 3, 3, 5, 1, 6, 3].forEach(r => game.roll("MIKE", r));
 // console.log(game.getScoring("MIKE"));
 // game.getPlayer("MIKE")?.printScoringSheet();
 
-console.log("⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️");
+console.log(SEPARATOR);
+
+
+
 
 game.roll(Player1, 8);
 game.roll(Player1, 1);
@@ -161,7 +211,8 @@ game.roll(Player1, 6);
 game.roll(Player1, 3);
 game.roll(Player1, 7);
 game.roll(Player1, 0);
-game.getPlayer(Player1)?.printScoringSheet();
+// TODO: test intermediate score
+game.getPlayer(Player1)?.printScoringSheet(); // assert 73
 game.roll(Player1, 5);
 game.roll(Player1, 2);
 game.roll(Player1, 10);

@@ -1,4 +1,5 @@
-import {ScoringTenpin, ScoringInterface, FrameType} from './scoring.js';
+import { ERRORCODE, GameRangeError } from './errors.js';
+import { ScoringTenpin, ScoringInterface, FrameType } from './scoring.js';
 
 export class FrameDisplay {
     protected readonly _rolls: Array<string>;
@@ -59,10 +60,13 @@ export class Player implements PlayerInterface {
 
     constructor(name: string, handicap = 0) {
         this._name = name;
+
+        if (handicap < 0)  throw new GameRangeError(`Negative handicap is not allowed`, {code: ERRORCODE.wrong_handicap_value});
+        if (handicap > 220) throw new GameRangeError(`Handicap value > 220 is not allowed`, {code: ERRORCODE.wrong_handicap_value});
         this._handicap = handicap;
     }
 
-    roll(pins: number = 0) {
+    roll(pins: number = 0): void {
         this.scoring.roll(pins);
     }
 
