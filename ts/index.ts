@@ -233,7 +233,7 @@ if (PRINT_SHEETS) game.getPlayer(Player2)?.printScoringSheet();
 console.log("✅ Partial scoring amid frame and final scoring with the handicap");
 
 
-// Test some more score sheets
+// Test some more scoresheets
 console.log(SEPARATOR);
 
 // Existing game instance
