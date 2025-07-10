@@ -14,9 +14,20 @@ project/local-plugins.sbt
 .ensime_cache/
 .sbt-scripted/
 local.sbt
+.cache
+.lib/
 
 # Bloop
 .bsp
+# scala setup-ide .
+.scala-build
+
+# Compile and runtime artifacts
+*.class
+*.log
+
+# JVM crash logs
+hs_err_pid*
 
 # VS Code
 .vscode/
