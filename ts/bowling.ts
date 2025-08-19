@@ -1,6 +1,6 @@
-import {GameError, GameRangeError, GameSetupError, ERRORCODE} from "./errors.js";
-import {GameType} from './scoring.js';
-import {PlayerInterface, Player, ScoringSheet} from './player.js';
+import {GameError, GameSetupError, ERRORCODE} from "./errors.ts";
+import {GameType} from './scoring.ts';
+import {type PlayerInterface, Player, ScoringSheet} from './player.ts';
 
 
 export class BowlingGame {

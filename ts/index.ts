@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 
-import { BowlingGame } from "./bowling.js";
-import { GameType } from './scoring.js';
-import { ERRORCODE, GameSetupError, GameError, GameRangeError } from "./errors.js";
+import { BowlingGame } from "./bowling.ts";
+import { GameType } from './scoring.ts';
+import { ERRORCODE, GameSetupError, GameError, GameRangeError } from "./errors.ts";
 
 const SEPARATOR = "⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️ 🎳 ⭐️";
 const PRINT_SHEETS = true;
@@ -37,7 +37,7 @@ console.log(SEPARATOR);
 
 // Should fail with a scoring_not_implemented Error
 try {
-    const game = new BowlingGame(GameType.Duckpin);
+    new BowlingGame(GameType.Duckpin);
 } catch (e) {
     if (e instanceof GameSetupError) assert(e.code === ERRORCODE.scoring_not_implemented);
     else throw e;
@@ -111,6 +111,7 @@ try {
     assert(testPlayer?.scoring.frames.length === 3, `Expected 3 frames, got ${testPlayer?.scoring.frames.length}`);
     assert(testPlayer?.scoring.currentFrameIndex === 3, `Expecting current frame to be #4, got ${testPlayer?.scoring.currentFrameIndex + 1}`);
     testPlayer?.scoring.currentFrame.roll(0); // Should fail here
+    // noinspection ExceptionCaughtLocallyJS
     throw new Error(`Test fixture error: Not getting no_more_rolls_available GameError`);
 } catch (e) {
     if (e instanceof GameError) assert(e.code === ERRORCODE.no_more_rolls_available, `Expected error no_more_rolls_available. Got: ${ERRORCODE[e.code]}`);

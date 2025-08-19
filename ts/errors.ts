@@ -12,7 +12,7 @@ export enum ERRORCODE {
     wrong_handicap_value,
     player_name_empty,
     player_already_exists,
-};
+}
 
 type ErrorDetails = {
     code: ERRORCODE,

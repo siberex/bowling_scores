@@ -1,5 +1,5 @@
-import { ERRORCODE, GameRangeError } from './errors.js';
-import { ScoringTenpin, ScoringInterface, FrameType } from './scoring.js';
+import { ERRORCODE, GameRangeError } from './errors.ts';
+import { ScoringTenpin, type ScoringInterface, FrameType } from './scoring.ts';
 
 export class FrameDisplay {
     protected readonly _rolls: Array<string>;

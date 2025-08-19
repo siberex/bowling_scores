@@ -1,4 +1,4 @@
-import {GameError, GameRangeError, ERRORCODE} from "./errors.js";
+import {GameError, GameRangeError, ERRORCODE} from "./errors.ts";
 
 // https://en.wikipedia.org/wiki/Tenpin_bowling#Traditional_scoring
 // https://en.wikipedia.org/wiki/Tenpin_bowling#World_Bowling_scoring
@@ -12,14 +12,14 @@ export const enum GameType {
     Candlepin = "CANDLEPIN",
     Duckpin = "DUCKPIN",
     Fivepin = "FIVEPIN",
-};
+}
 
 export const enum FrameType {
     Open = "OPEN", // frame is currently in play
     Strike = "STRIKE", // player knocked down all the pins with the first roll, marked "X"
     Spare = "SPARE", // player knocked down all the pins during two turns, marked "/"
     Gutter = "GUTTER", // no pins were knocked down during two turns (balls rolled into the gutters), marked "-"
-};
+}
 
 class Frame {
     type: FrameType = FrameType.Open;
@@ -121,12 +121,10 @@ class FrameTenpin extends Frame {
         if (this.rolls.length === 1 && (this.rolls[0] !== this.maxRoll || this.isLast)) return true;
 
         // Third roll is only allowed in the last frame and only after the spare or strike
-        if ( this.rolls.length === 2 && this.isLast && (
+        return this.rolls.length === 2 && this.isLast && (
             this.rolls[0] === this.maxRoll // strike
             || (this.rolls[0] + this.rolls[1]) === this.maxRoll // spare
-        ) ) return true;
-
-        return false;
+        );
     }
 
     roll(score = 0) {
@@ -163,7 +161,6 @@ class FrameTenpin extends Frame {
         this.displayRolls.push(displayScore);        
     }
 }
-
 
 export interface ScoringInterface {
     type: GameType;

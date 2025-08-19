@@ -2,7 +2,7 @@
 
 Tenpin Bowling scoring as [defined by IBF](https://bowling.sport/universal-playing-rules-chapter-2/).
 
-Goal is to shove as much OOP as reasonable into the task, but without becoming the [FizzBuzz Enterprise Edition](https://github.com/EnterpriseQualityCoding/FizzBuzzEnterpriseEdition).
+The goal is to shove as much OOP as reasonable into the task, but without becoming the [FizzBuzz Enterprise Edition](https://github.com/EnterpriseQualityCoding/FizzBuzzEnterpriseEdition).
 
 
 # TODO
@@ -19,7 +19,6 @@ Goal is to shove as much OOP as reasonable into the task, but without becoming t
 
 ```bash
 cd ts
-npm i
 npm test
 ```
 

@@ -6,11 +6,15 @@
   "scripts": {
     "build": "tsc",
     "start": "node --enable-source-maps build/index.js",
-    "test": "npm run build && npm run start"
+    "test_tsc": "npm run build && npm run start",
+    "test": "node --experimental-transform-types index.ts"
   },
-  "author": "",
+  "author": "Stephen Jingle | sib.li",
   "license": "ISC",
-  "description": "",
+  "description": "Tenpin Bowling scoring as defined by IBF",
+  "engines" : {
+    "node" : ">=22.7.0"
+  },
   "devDependencies": {
     "@types/node": "^22.15.3",
     "typescript": "^5.8.3"
